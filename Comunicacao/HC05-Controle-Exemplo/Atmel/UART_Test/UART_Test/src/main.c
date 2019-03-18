@@ -1,152 +1,178 @@
 /**
- * \file
+ * 5 semestre - Eng. da Computação - Insper
+ * Rafael Corsi - rafael.corsi@insper.edu.br
  *
- * \brief Empty user application template
+ * Projeto 0 para a placa SAME70-XPLD
  *
+ * Objetivo :
+ *  - Introduzir ASF e HAL
+ *  - Configuracao de clock
+ *  - Configuracao pino In/Out
+ *
+ * Material :
+ *  - Kit: ATMEL SAME70-XPLD - ARM CORTEX M7
  */
+
+/************************/
+/* includes                                                             */
+/************************/
+
+#include "asf.h"
+
+/************************/
+/* defines                                                              */
+/************************/
+
+#define LED_PIO           PIOC                  // periferico que controla o LED
+#define LED_PIO_ID        12                    // ID do periférico PIOC (controla LED)
+#define LED_PIO_IDX       8u                    // ID do LED no PIO
+#define LED_PIO_IDX_MASK  (1u << LED_PIO_IDX)   // Mascara para CONTROLARMOS o LED
+
+
+#define BUT_PIO           PIOA
+#define BUT_PIO_ID        10
+#define BUT_PIO_IDX       11u
+#define BUT_PIO_IDX_MASK  (1u << BUT_PIO_IDX)
+
+/*  Default pin configuration (no attribute). */
+#define _PIO_DEFAULT             (0u << 0)
+/*  The internal pin pull-up is active. */
+#define _PIO_PULLUP              (1u << 0)
+/*  The internal glitch filter is active. */
+#define _PIO_DEGLITCH            (1u << 1)
+/*  The pin is open-drain. */
+#define _PIO_OPENDRAIN           (1u << 2)
+/*  The internal debouncing filter is active. */
+#define _PIO_DEBOUNCE            (1u << 3)
+/************************/
+/* constants                                                            */
+/************************/
+
+/************************/
+/* variaveis globais                                                    */
+/************************/
+
+/************************/
+/* prototypes                                                           */
+/************************/
+
+void init(void);
+
+/************************/
+/* interrupcoes                                                         */
+/************************/
+
+/************************/
+/* funcoes                                                              */
+/************************/
+void _pio_set(Pio *p_pio, const uint32_t ul_mask)
+{
+	p_pio->PIO_SODR = ul_mask;
+}	
+
+void _pio_clear(Pio *p_pio, const uint32_t ul_mask)
+{
+	p_pio->PIO_CODR = ul_mask;
+}
 
 /**
- * \mainpage User Application template doxygen documentation
+ * \brief Configure PIO internal pull-up.
  *
- * \par Empty user application template
- *
- * Bare minimum empty user application template
- *
- * \par Content
- *
- * -# Include the ASF header files (through asf.h)
- * -# "Insert system clock initialization code here" comment
- * -# Minimal main function that starts with a call to board_init()
- * -# "Insert application code here" comment
- *
+ * \param p_pio Pointer to a PIO instance.
+ * \param ul_mask Bitmask of one or more pin(s) to configure.
+ * \param ul_pull_up_enable Indicates if the pin(s) internal pull-up shall be
+ * configured.
  */
-
-/*
- * Include header files for all drivers that have been imported from
- * Atmel Software Framework (ASF).
+void _pio_pull_up(Pio *p_pio, const uint32_t ul_mask,
+		const uint32_t ul_pull_up_enable)
+		{
+			if (ul_pull_up_enable == 1){
+				p_pio->PIO_PUER = ul_mask;
+			}
+			else{
+				p_pio->PIO_PUDR = ul_mask;
+			}        
+ }
+ 
+ /**
+ * \brief Configure one or more pin(s) or a PIO controller as inputs.
+ * Optionally, the corresponding internal pull-up(s) and glitch filter(s) can
+ * be enabled.
+ *
+ * \param p_pio Pointer to a PIO instance.
+ * \param ul_mask Bitmask indicating which pin(s) to configure as input(s).
+ * \param ul_attribute PIO attribute(s).
  */
-/*
- * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
- */
-#include <asf.h>
-#include <string.h>
-
-// Descomente o define abaixo, para desabilitar o Bluetooth e utilizar modo Serial via Cabo
-//#define DEBUG_SERIAL
-
-
-#ifdef DEBUG_SERIAL
-#define UART_COMM USART1
-#else
-#define UART_COMM USART0
-#endif
-
-volatile long g_systimer = 0;
-
-void SysTick_Handler() {
-	g_systimer++;
-}
-
-
-void config_console(void) {
-	usart_serial_options_t config;
-	config.baudrate = 9600;
-	config.charlength = US_MR_CHRL_8_BIT;
-	config.paritytype = US_MR_PAR_NO;
-	config.stopbits = false;
-	usart_serial_init(USART1, &config);
-	usart_enable_tx(USART1);
-	usart_enable_rx(USART1);
-}
-
-void usart_put_string(Usart *usart, char str[]) {
-	usart_serial_write_packet(usart, str, strlen(str));
-}
-
-int usart_get_string(Usart *usart, char buffer[], int bufferlen, int timeout_ms) {
-	long timestart = g_systimer;
-	uint32_t rx;
-	uint32_t counter = 0;
-	
-	while(g_systimer - timestart < timeout_ms && counter < bufferlen - 1) {
-		if(usart_read(usart, &rx) == 0) {
-			//timestart = g_systimer; // reset timeout
-			buffer[counter++] = rx;
-		}
-	}
-	buffer[counter] = 0x00;
-	return counter;
-}
-
-void usart_send_command(Usart *usart, char buffer_rx[], int bufferlen, char buffer_tx[], int timeout) {
-	usart_put_string(usart, buffer_tx);
-	usart_get_string(usart, buffer_rx, bufferlen, timeout);
-}
-
-void usart_log(char* name, char* log) {
-	usart_put_string(USART1, "[");
-	usart_put_string(USART1, name);
-	usart_put_string(USART1, "] ");
-	usart_put_string(USART1, log);
-	usart_put_string(USART1, "\r\n");
-}
-
-void hc05_config_server(void) {
-	usart_serial_options_t config;
-	config.baudrate = 9600;
-	config.charlength = US_MR_CHRL_8_BIT;
-	config.paritytype = US_MR_PAR_NO;
-	config.stopbits = false;
-	usart_serial_init(USART0, &config);
-	usart_enable_tx(USART0);
-	usart_enable_rx(USART0);
-	
-	 // RX - PB0  TX - PB1 
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
-}
-
-int hc05_server_init(void) {
-	char buffer_rx[128];
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);	
-	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEServer", 1000);
-	usart_log("hc05_server_init", buffer_rx);
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+PIN0000", 1000);
-	usart_log("hc05_server_init", buffer_rx);
-}
-
-
-int main (void)
+void _pio_set_input(Pio *p_pio, const uint32_t ul_mask,
+		const uint32_t ul_attribute)
 {
-	board_init();
-	sysclk_init();
-	delay_init();
-	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
-	config_console();
-	
-	#ifndef DEBUG_SERIAL
-	usart_put_string(USART1, "Inicializando...\r\n");
-	usart_put_string(USART1, "Config HC05 Server...\r\n");
-	hc05_config_server();
-	hc05_server_init();
-	#endif
-	
-	char button1 = '0';
-	char eof = 'X';
-	char buffer[1024];
-	
-	while(1) {
-		if(pio_get(PIOA, PIO_INPUT, PIO_PA11) == 0) {
-			button1 = '1';
-		} else {
-			button1 = '0';
-		}
-		
-		while(!usart_is_tx_ready(UART_COMM));
-		usart_write(UART_COMM, button1);
-		while(!usart_is_tx_ready(UART_COMM));
-		usart_write(UART_COMM, eof);
+	p_pio->PIO_ODR = ul_mask;
+	if(ul_attribute&0x01){
+		_pio_pull_up(p_pio, ul_mask, 1);
 	}
+	if(ul_attribute&0x02){
+		//deglitch
+	}
+	if(ul_attribute&0x04){
+		//opendrain
+	}
+	if(ul_attribute&0x08){
+		//debounce
+	}
+}
+
+// Função de inicialização do uC
+void init(void){
+	// Initialize the board clock
+	sysclk_init();
+	
+	// Disativa WatchDog Timer
+	WDT->WDT_MR = WDT_MR_WDDIS;
+
+	// Ativa o PIO na qual o LED foi conectado
+	// para que possamos controlar o LED.
+	pmc_enable_periph_clk(LED_PIO_ID);
+
+	//Inicializa PC8 como saída
+	pio_set_output(LED_PIO, LED_PIO_IDX_MASK, 0, 0, 0);
+	
+	// Inicializa PIO do botao
+	pmc_enable_periph_clk(BUT_PIO_ID);
+	
+	pio_set_input(BUT_PIO,BUT_PIO_IDX_MASK,PIO_DEFAULT);
+	
+	pio_pull_up(BUT_PIO,BUT_PIO_IDX_MASK,1);
+}
+
+
+
+
+/************************/
+/* Main                                                                 */
+/************************/
+
+// Funcao principal chamada na inicalizacao do uC.
+int main(void)
+{
+	// inicializa sistema e IOs
+	init();
+	
+	
+	
+	// super loop
+	// aplicacoes embarcadas não devem sair do while(1).
+	while (1)
+	{
+		if(pio_get(BUT_PIO,PIO_INPUT,BUT_PIO_IDX_MASK)==0){
+		
+			//pio_set(PIOC, LED_PIO_IDX_MASK);      // Coloca 1 no pino LED
+			//delay_ms(200);                   // Delay por software de 200 ms
+			pio_clear(PIOC, LED_PIO_IDX_MASK);    // Coloca 0 no pino do LED
+			//delay_ms(200);                   // Delay por software de 200 ms
+	
+		}else{
+		pio_set(PIOC, LED_PIO_IDX_MASK);      // Coloca 1 no pino LED
+	}
+	}
+	return 0;
 }
