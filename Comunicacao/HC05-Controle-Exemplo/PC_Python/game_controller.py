@@ -6,7 +6,7 @@ import pyvjoy # Windows apenas
 
 class MyControllerMap:
     def __init__(self):
-        self.button = {'A': 1}
+        self.button = {'Z': 1}
 
 
 class SerialControllerInterface:
@@ -32,9 +32,9 @@ class SerialControllerInterface:
 
         if data == b'1':
             logging.info("Sending press")
-            self.j.set_button(self.mapping.button['A'], 1)
+            self.j.set_button(self.mapping.button['Z'], 1)
         elif data == b'0':
-            self.j.set_button(self.mapping.button['A'], 0)
+            self.j.set_button(self.mapping.button['Z'], 0)
 
         self.incoming = self.ser.read()
 
@@ -45,9 +45,9 @@ class DummyControllerInterface:
         self.j = pyvjoy.VJoyDevice(1)
 
     def update(self):
-        self.j.set_button(self.mapping.button['A'], 1)
+        self.j.set_button(self.mapping.button['Z'], 1)
         time.sleep(0.1)
-        self.j.set_button(self.mapping.button['A'], 0)
+        self.j.set_button(self.mapping.button['Z'], 0)
         logging.info("[Dummy] Pressed A button")
         time.sleep(1)
 
