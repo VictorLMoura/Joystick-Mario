@@ -6,7 +6,10 @@ import pyvjoy # Windows apenas
 
 class MyControllerMap:
     def __init__(self):
-        self.button = {'Z': 1}
+        self.button1 = {'A': 0}
+        self.button2 = {'B': 0}
+        self.button3 = {'Start': 0}
+        self.button4 = {'Select': 0}
 
 
 class SerialControllerInterface:
@@ -25,17 +28,21 @@ class SerialControllerInterface:
         ## Sync protocol
         while self.incoming != b'X':
             self.incoming = self.ser.read()
-            logging.debug("Received INCOMING: {}".format(self.incoming))
+            print("Received INCOMING: {}".format(self.incoming))
+            
+        data = self.ser.read(2)  
+        print("Received DATA: {}".format(data))
 
-        data = self.ser.read()
-        logging.debug("Received DATA: {}".format(data))
-
-        if data == b'1':
-            logging.info("Sending press")
-            self.j.set_button(self.mapping.button['Z'], 1)
-        elif data == b'0':
-            self.j.set_button(self.mapping.button['Z'], 0)
-
+        if data == b'A1':
+            print("Sending press")
+            self.j.set_button(self.mapping.button1['A'], 1)
+        elif data == b'A0':
+            self.j.set_button(self.mapping.button1['A'], 0)
+        if data == b'B1':
+            print("Sending press")
+            self.j.set_button(self.mapping.button1['B'], 1)
+        elif data == b'B0':
+            self.j.set_button(self.mapping.button1['B'], 0)
         self.incoming = self.ser.read()
 
 
@@ -45,9 +52,9 @@ class DummyControllerInterface:
         self.j = pyvjoy.VJoyDevice(1)
 
     def update(self):
-        self.j.set_button(self.mapping.button['Z'], 1)
+        self.j.set_button(self.mapping.button1['A'], 1)
         time.sleep(0.1)
-        self.j.set_button(self.mapping.button['Z'], 0)
+        self.j.set_button(self.mapping.button1['A'], 0)
         logging.info("[Dummy] Pressed A button")
         time.sleep(1)
 

@@ -31,6 +31,17 @@
 #include <asf.h>
 #include <string.h>
 
+#define BUT_PIO_ID			  ID_PIOB
+#define BUT_PIO				  PIOB
+#define BUT_PIN				  2u
+#define BUT_PIN_MASK			  (1 << BUT_PIN)
+
+#define BUT2_PIO_ID			  ID_PIOA
+#define BUT2_PIO				  PIOA
+#define BUT2_PIN				  3u
+#define BUT2_PIN_MASK			  (1 << BUT2_PIN)
+
+
 // Descomente o define abaixo, para desabilitar o Bluetooth e utilizar modo Serial via Cabo
 //#define DEBUG_SERIAL
 
@@ -41,7 +52,47 @@
 #define UART_COMM USART0
 #endif
 
+void BUT_init(void);
+void BUT2_init(void);
+
+
 volatile long g_systimer = 0;
+
+/**
+* @Brief Inicializa o pino do BUT
+*/
+void BUT_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT_PIO_ID);
+	pio_set_input(BUT_PIO, BUT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupção */
+	//pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
+	//pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button_callback);
+
+	/* habilita interrupçcão do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	//NVIC_EnableIRQ(BUT_PIO_ID);
+	//NVIC_SetPriority(BUT_PIO_ID, 1);
+};
+
+void BUT2_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT2_PIO_ID);
+	pio_set_input(BUT2_PIO, BUT2_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupção */
+	//pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
+	//pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button_callback);
+
+	/* habilita interrupçcão do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	//NVIC_EnableIRQ(BUT_PIO_ID);
+	//NVIC_SetPriority(BUT_PIO_ID, 1);
+};
+
 
 void SysTick_Handler() {
 	g_systimer++;
@@ -117,6 +168,17 @@ int hc05_server_init(void) {
 	usart_log("hc05_server_init", buffer_rx);
 }
 
+void send_command(char c[512]){
+		char eof = 'X';
+
+	while(!usart_is_tx_ready(UART_COMM));
+	usart_write(UART_COMM, c[0]);
+	while(!usart_is_tx_ready(UART_COMM));
+	usart_write(UART_COMM, c[1]);
+	while(!usart_is_tx_ready(UART_COMM));
+	usart_write(UART_COMM, eof);
+}
+
 
 int main (void)
 {
@@ -126,6 +188,11 @@ int main (void)
 	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
 	config_console();
 	
+	/* Configura os botões */
+	BUT_init();
+	BUT2_init();
+
+	
 	#ifndef DEBUG_SERIAL
 	usart_put_string(USART1, "Inicializando...\r\n");
 	usart_put_string(USART1, "Config HC05 Server...\r\n");
@@ -133,20 +200,26 @@ int main (void)
 	hc05_server_init();
 	#endif
 	
-	char button1 = '0';
-	char eof = 'X';
+	char button[4];
+	char header;
 	char buffer[1024];
 	
 	while(1) {
-		if(pio_get(PIOA, PIO_INPUT, PIO_PA11) == 0) {
-			button1 = '1';
+		if(!pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)) {
+			//header = 'A';
+			send_command("A1");
 		} else {
-			button1 = '0';
+			//header = 'A';
+			send_command("A0");
 		}
 		
-		while(!usart_is_tx_ready(UART_COMM));
-		usart_write(UART_COMM, button1);
-		while(!usart_is_tx_ready(UART_COMM));
-		usart_write(UART_COMM, eof);
+		if(!pio_get(BUT2_PIO, PIO_INPUT, BUT2_PIN_MASK)) {
+			//header = 'B';
+			send_command("B1");
+		} else {
+			//header = 'B';
+			send_command("B0");
+		}
+		
 	}
 }
