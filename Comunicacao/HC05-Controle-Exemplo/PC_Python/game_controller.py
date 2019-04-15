@@ -35,19 +35,23 @@ class SerialControllerInterface:
 
         if data == b'A1':
             print("Sending press")
-            self.j.set_button(self.mapping.button1['A'], 1)
+            #self.j.set_button(self.mapping.button1['A'], 1)
+            self.j.set_button(1, 1)
         elif data == b'A0':
-            self.j.set_button(self.mapping.button1['A'], 0)
+            self.j.set_button(1, 0)
         if data == b'B1':
             print("Sending press")
-            self.j.set_button(self.mapping.button2['B'], 1)
+            #self.j.set_button(self.mapping.button2['B'], 1)
+            self.j.set_button(2, 1)
+
         elif data == b'B0':
-            self.j.set_button(self.mapping.button2['B'], 0)
+            self.j.set_button(2, 0)
         if data == b'C1':
             print("Sending press")
-            self.j.set_button(self.mapping.button3['Start'], 1)
+            #self.j.set_button(self.mapping.button3['Start'], 1)
+            self.j.set_button(3, 1)
         elif data == b'C0':
-            self.j.set_button(self.mapping.button3['Start'], 0)
+            self.j.set_button(3, 0)
         self.incoming = self.ser.read()
 
 
