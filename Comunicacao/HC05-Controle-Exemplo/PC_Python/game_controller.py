@@ -6,10 +6,10 @@ import pyvjoy # Windows apenas
 
 class MyControllerMap:
     def __init__(self):
-        self.button1 = {'A': 0}
-        self.button2 = {'B': 0}
-        self.button3 = {'Start': 0}
-        self.button4 = {'Select': 0}
+        self.button1 = {'A': 1}
+        self.button2 = {'B': 1}
+        self.button3 = {'Start': 1}
+        self.button4 = {'Select': 1}
 
 
 class SerialControllerInterface:
@@ -29,7 +29,7 @@ class SerialControllerInterface:
         while self.incoming != b'X':
             self.incoming = self.ser.read()
             print("Received INCOMING: {}".format(self.incoming))
-            
+
         data = self.ser.read(2)  
         print("Received DATA: {}".format(data))
 
@@ -40,9 +40,14 @@ class SerialControllerInterface:
             self.j.set_button(self.mapping.button1['A'], 0)
         if data == b'B1':
             print("Sending press")
-            self.j.set_button(self.mapping.button1['B'], 1)
+            self.j.set_button(self.mapping.button2['B'], 1)
         elif data == b'B0':
-            self.j.set_button(self.mapping.button1['B'], 0)
+            self.j.set_button(self.mapping.button2['B'], 0)
+        if data == b'C1':
+            print("Sending press")
+            self.j.set_button(self.mapping.button3['Start'], 1)
+        elif data == b'C0':
+            self.j.set_button(self.mapping.button3['Start'], 0)
         self.incoming = self.ser.read()
 
 

@@ -41,6 +41,16 @@
 #define BUT2_PIN				  3u
 #define BUT2_PIN_MASK			  (1 << BUT2_PIN)
 
+#define BUT3_PIO_ID			  ID_PIOC
+#define BUT3_PIO				  PIOC
+#define BUT3_PIN				  13u
+#define BUT3_PIN_MASK			  (1 << BUT3_PIN)
+
+#define BUT4_PIO_ID			  ID_PIOC
+#define BUT4_PIO				  PIOC
+#define BUT4_PIN				  13u
+#define BUT4_PIN_MASK			  (1 << BUT4_PIN)
+
 
 // Descomente o define abaixo, para desabilitar o Bluetooth e utilizar modo Serial via Cabo
 //#define DEBUG_SERIAL
@@ -54,6 +64,10 @@
 
 void BUT_init(void);
 void BUT2_init(void);
+void BUT3_init(void);
+void BUT4_init(void);
+
+
 
 
 volatile long g_systimer = 0;
@@ -81,6 +95,38 @@ void BUT2_init(void){
 	/* config. pino botao em modo de entrada */
 	pmc_enable_periph_clk(BUT2_PIO_ID);
 	pio_set_input(BUT2_PIO, BUT2_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupção */
+	//pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
+	//pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button_callback);
+
+	/* habilita interrupçcão do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	//NVIC_EnableIRQ(BUT_PIO_ID);
+	//NVIC_SetPriority(BUT_PIO_ID, 1);
+};
+
+void BUT3_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT3_PIO_ID);
+	pio_set_input(BUT3_PIO, BUT3_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupção */
+	//pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
+	//pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button_callback);
+
+	/* habilita interrupçcão do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	//NVIC_EnableIRQ(BUT_PIO_ID);
+	//NVIC_SetPriority(BUT_PIO_ID, 1);
+};
+
+void BUT4_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT4_PIO_ID);
+	pio_set_input(BUT4_PIO, BUT4_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 
 	/* config. interrupcao em borda de descida no botao do kit */
 	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupção */
@@ -191,6 +237,9 @@ int main (void)
 	/* Configura os botões */
 	BUT_init();
 	BUT2_init();
+	BUT3_init();
+	BUT4_init();
+
 
 	
 	#ifndef DEBUG_SERIAL
@@ -206,19 +255,21 @@ int main (void)
 	
 	while(1) {
 		if(!pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)) {
-			//header = 'A';
 			send_command("A1");
 		} else {
-			//header = 'A';
 			send_command("A0");
 		}
 		
 		if(!pio_get(BUT2_PIO, PIO_INPUT, BUT2_PIN_MASK)) {
-			//header = 'B';
 			send_command("B1");
 		} else {
-			//header = 'B';
 			send_command("B0");
+		}
+		
+		if(!pio_get(BUT3_PIO, PIO_INPUT, BUT3_PIN_MASK)) {
+			send_command("C1");
+		} else {
+			send_command("C0");
 		}
 		
 	}
