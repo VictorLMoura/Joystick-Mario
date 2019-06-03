@@ -29,15 +29,17 @@
  *
  * \asf_license_stop
  */
-/*
- * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
- */
 
-#ifndef CONF_BOARD_H
-#define CONF_BOARD_H
+#ifndef CONF_BOARD_H_INCLUDED
+#define CONF_BOARD_H_INCLUDED
 
 /* Enable ICache and DCache */
 #define CONF_BOARD_ENABLE_CACHE
 
 #define CONF_BOARD_UART_CONSOLE
-#endif /* CONF_BOARD_H */
+
+#define CONF_BOARD_MAXTOUCH_XPRO
+#define CONF_BOARD_TWIHS0
+
+#define CONF_BOARD_ILI9488
+#endif /* CONF_BOARD_H_INCLUDED */

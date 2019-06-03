@@ -30,6 +30,10 @@
  */
 #include <asf.h>
 #include <string.h>
+#include <string.h>
+#include "conf_board.h"
+#include "conf_example.h"
+#include "conf_uart_serial.h"
 
 #define BUT_PIO_ID			  ID_PIOB
 #define BUT_PIO				  PIOB
@@ -69,7 +73,7 @@ void BUT4_init(void);
 
 
 
-
+volatile Bool conected;
 volatile long g_systimer = 0;
 
 /**
@@ -138,7 +142,22 @@ void BUT4_init(void){
 	//NVIC_EnableIRQ(BUT_PIO_ID);
 	//NVIC_SetPriority(BUT_PIO_ID, 1);
 };
+struct ili9488_opt_t g_ili9488_display_opt;
+static void configure_lcd(void){
+	/* Initialize display parameter */
+	g_ili9488_display_opt.ul_width = ILI9488_LCD_WIDTH;
+	g_ili9488_display_opt.ul_height = ILI9488_LCD_HEIGHT;
+	g_ili9488_display_opt.foreground_color = COLOR_CONVERT(COLOR_WHITE);
+	g_ili9488_display_opt.background_color = COLOR_CONVERT(COLOR_WHITE);
 
+	/* Initialize LCD */
+	ili9488_init(&g_ili9488_display_opt);
+}
+
+void draw_screen(void) {
+	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+	ili9488_draw_filled_rectangle(0, 0, ILI9488_LCD_WIDTH-1, ILI9488_LCD_HEIGHT-1);
+}
 
 void SysTick_Handler() {
 	g_systimer++;
@@ -170,6 +189,9 @@ int usart_get_string(Usart *usart, char buffer[], int bufferlen, int timeout_ms)
 			//timestart = g_systimer; // reset timeout
 			buffer[counter++] = rx;
 		}
+		//if(g_systimer - timestart < timeout_ms){
+			//conected = false;
+		//}
 	}
 	buffer[counter] = 0x00;
 	return counter;
@@ -212,6 +234,8 @@ int hc05_server_init(void) {
 	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);
 	usart_send_command(USART0, buffer_rx, 1000, "AT+PIN0000", 1000);
 	usart_log("hc05_server_init", buffer_rx);
+	
+	conected = true;
 }
 
 void send_command(char c[512]){
@@ -225,11 +249,30 @@ void send_command(char c[512]){
 	usart_write(UART_COMM, eof);
 }
 
+void printa_conectado(){
+	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+	ili9488_draw_filled_rectangle(0,370,400,500);
+	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_BLACK));
+	char buff5[32];
+	sprintf(buff5, "Controle ativado");
+	ili9488_draw_string(45, 395, buff5);
+}
+void printa_desconectado(){
+	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+	ili9488_draw_filled_rectangle(0,370,400,500);
+	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_BLACK));
+	char buff5[32];
+	sprintf(buff5, "Controle Desconectado");
+	ili9488_draw_string(45, 395, buff5);
+}
 
 int main (void)
 {
-	board_init();
+	//board_init();
 	sysclk_init();
+	board_init();  /* Initialize board */
+	configure_lcd();
+	draw_screen();
 	delay_init();
 	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
 	config_console();
@@ -239,7 +282,9 @@ int main (void)
 	BUT2_init();
 	BUT3_init();
 	BUT4_init();
-
+	
+	conected = false;
+	printa_desconectado();
 
 	
 	#ifndef DEBUG_SERIAL
@@ -254,6 +299,13 @@ int main (void)
 	char buffer[1024];
 	
 	while(1) {
+		if(conected == true){
+			printa_conectado();
+		}
+		else{
+			printa_desconectado();
+		}
+		
 		if(!pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)) {
 			send_command("A1");
 		} else {
